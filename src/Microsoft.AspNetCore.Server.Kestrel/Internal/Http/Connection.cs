@@ -278,7 +278,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
 
             Input.IncomingComplete(readCount, error);
 
-            if (errorDone)
+            if (!normalRead)
             {
                 Abort(error);
             }

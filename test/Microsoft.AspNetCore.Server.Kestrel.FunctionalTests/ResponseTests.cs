@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -321,14 +320,15 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                 }
                 else
                 {
-                    using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                    using (var connection = new TestConnection(host.GetPort()))
                     {
-                        socket.Connect(new IPEndPoint(IPAddress.Loopback, host.GetPort()));
-                        socket.Send(Encoding.ASCII.GetBytes(
-                            "POST / HTTP/1.1\r\n" +
-                            "Transfer-Encoding: chunked\r\n" +
-                            "\r\n" +
-                            "wrong"));
+                        await connection.Send(
+                            "POST / HTTP/1.1",
+                            "Transfer-Encoding: chunked",
+                            "",
+                            "wrong");
+                        await connection.Receive(
+                            "HTTP/1.1 400 Bad Request");
                     }
                 }
 
@@ -533,7 +533,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         $"HTTP/1.1 200 OK",
                         $"Date: {server.Context.DateHeaderValue}",
                         "Content-Length: 11",
@@ -858,7 +858,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
             {
                 using (var connection = server.CreateConnection())
                 {
-                    await connection.SendEnd(
+                    await connection.Send(
                         "GET / HTTP/1.1",
                         "",
                         "");
@@ -880,7 +880,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
         public async Task AppCanWriteOwnBadRequestResponse()
         {
             var expectedResponse = string.Empty;
-            var responseWrittenTcs = new TaskCompletionSource<object>();
+            var responseWritten = new SemaphoreSlim(0);
 
             using (var server = new TestServer(async httpContext =>
             {
@@ -894,19 +894,19 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                     httpContext.Response.StatusCode = 400;
                     httpContext.Response.ContentLength = ex.Message.Length;
                     await httpContext.Response.WriteAsync(ex.Message);
-                    responseWrittenTcs.SetResult(null);
+                    responseWritten.Release();
                 }
             }, new TestServiceContext()))
             {
                 using (var connection = server.CreateConnection())
                 {
-                    await connection.SendEnd(
+                    await connection.Send(
                         "POST / HTTP/1.1",
                         "Transfer-Encoding: chunked",
                         "",
-                        "bad");
-                    await responseWrittenTcs.Task;
-                    await connection.ReceiveEnd(
+                        "wrong");
+                    await responseWritten.WaitAsync();
+                    await connection.Receive(
                         "HTTP/1.1 400 Bad Request",
                         $"Date: {server.Context.DateHeaderValue}",
                         $"Content-Length: {expectedResponse.Length}",
@@ -1036,11 +1036,11 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "hello, world");
 
                     // Make sure connection was kept open
-                    await connection.SendEnd(
+                    await connection.Send(
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.Receive(
                         "HTTP/1.1 200 OK",
                         $"Date: {server.Context.DateHeaderValue}",
                         $"Transfer-Encoding: {responseTransferEncoding}",
