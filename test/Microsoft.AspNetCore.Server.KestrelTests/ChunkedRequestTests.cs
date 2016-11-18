@@ -158,7 +158,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                         "Content-Length: 7",
                         "",
                         "Goodbye");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         "HTTP/1.1 200 OK",
                         $"Date: {testContext.DateHeaderValue}",
                         "Content-Length: 11",
@@ -256,8 +256,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                 using (var connection = server.CreateConnection())
                 {
                     await connection.Send(fullRequest);
-
-                    await connection.Receive(expectedFullResponse);
+                    await connection.ReceiveEnd(expectedFullResponse);
                 }
             }
         }
@@ -425,8 +424,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                 using (var connection = server.CreateConnection())
                 {
                     await connection.Send(fullRequest);
-
-                    await connection.Receive(expectedFullResponse);
+                    await connection.ReceiveEnd(expectedFullResponse);
                 }
             }
         }

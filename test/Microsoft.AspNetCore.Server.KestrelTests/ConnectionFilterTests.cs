@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Filter;
 using Microsoft.AspNetCore.Testing;
 using Microsoft.Extensions.Internal;
@@ -15,22 +14,6 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
 {
     public class ConnectionFilterTests
     {
-        private async Task App(HttpContext httpContext)
-        {
-            var request = httpContext.Request;
-            var response = httpContext.Response;
-            var buffer = new byte[httpContext.Request.ContentLength.Value];
-            var bytesRead = 0;
-
-            while (bytesRead < buffer.Length)
-            {
-                var count = await request.Body.ReadAsync(buffer, bytesRead, buffer.Length - bytesRead);
-                bytesRead += count;
-            }
-
-            await response.Body.WriteAsync(buffer, 0, buffer.Length);
-        }
-
         [Fact]
         public async Task CanReadAndWriteWithRewritingConnectionFilter()
         {
@@ -39,7 +22,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
 
             var sendString = "POST / HTTP/1.0\r\nContent-Length: 12\r\n\r\nHello World?";
 
-            using (var server = new TestServer(App, serviceContext))
+            using (var server = new TestServer(TestApp.EchoApp, serviceContext))
             {
                 using (var connection = server.CreateConnection())
                 {
@@ -62,7 +45,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
         {
             var serviceContext = new TestServiceContext(new AsyncConnectionFilter());
 
-            using (var server = new TestServer(App, serviceContext))
+            using (var server = new TestServer(TestApp.EchoApp, serviceContext))
             {
                 using (var connection = server.CreateConnection())
                 {
@@ -86,7 +69,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
         {
             var serviceContext = new TestServiceContext(new ThrowingConnectionFilter());
 
-            using (var server = new TestServer(App, serviceContext))
+            using (var server = new TestServer(TestApp.EchoApp, serviceContext))
             {
                 using (var connection = server.CreateConnection())
                 {

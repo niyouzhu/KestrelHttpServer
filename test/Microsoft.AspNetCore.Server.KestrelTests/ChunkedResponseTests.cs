@@ -250,7 +250,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         "HTTP/1.1 200 OK",
                         $"Date: {testContext.DateHeaderValue}",
                         "Transfer-Encoding: chunked",
@@ -357,7 +357,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
 
                     flushWh.Set();
 
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         "6",
                         "World!",
                         "0",
@@ -387,7 +387,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         "HTTP/1.1 200 OK",
                         $"Date: {testContext.DateHeaderValue}",
                         "Transfer-Encoding: chunked",

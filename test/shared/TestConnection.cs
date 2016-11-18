@@ -116,6 +116,11 @@ namespace Microsoft.AspNetCore.Testing
             }
         }
 
+        public void Shutdown(SocketShutdown how)
+        {
+            _socket.Shutdown(how);
+        }
+
         public Task WaitForConnectionClose()
         {
             var tcs = new TaskCompletionSource<object>();

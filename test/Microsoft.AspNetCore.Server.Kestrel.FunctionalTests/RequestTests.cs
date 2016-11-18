@@ -425,19 +425,19 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
         [Fact]
         public async Task RequestAbortedTokenFiredOnClientFIN()
         {
-            var appStartedTcs = new TaskCompletionSource<object>();
-            var requestAbortedTcs = new TaskCompletionSource<object>();
+            var appStarted = new SemaphoreSlim(0);
+            var requestAborted = new SemaphoreSlim(0);
             var builder = new WebHostBuilder()
                 .UseKestrel()
                 .UseUrls($"http://127.0.0.1:0")
                 .Configure(app => app.Run(async context =>
                 {
-                    appStartedTcs.SetResult(null);
+                    appStarted.Release();
 
-                    var requestAborted = context.RequestAborted;
-                    requestAborted.Register(() => requestAbortedTcs.SetResult(null));
+                    var token = context.RequestAborted;
+                    token.Register(() => requestAborted.Release());
 
-                    while (!requestAborted.IsCancellationRequested)
+                    while (!token.IsCancellationRequested)
                     {
                         await context.Response.WriteAsync("a");
                     }
@@ -451,9 +451,9 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                 {
                     socket.Connect(new IPEndPoint(IPAddress.Loopback, host.GetPort()));
                     socket.Send(Encoding.ASCII.GetBytes("GET / HTTP/1.1\r\n\r\n"));
-                    await appStartedTcs.Task;
+                    await appStarted.WaitAsync();
                     socket.Shutdown(SocketShutdown.Send);
-                    await requestAbortedTcs.Task.TimeoutAfter(TimeSpan.FromSeconds(10));
+                    await requestAborted.WaitAsync().TimeoutAfter(TimeSpan.FromSeconds(10));
                 }
             }
         }

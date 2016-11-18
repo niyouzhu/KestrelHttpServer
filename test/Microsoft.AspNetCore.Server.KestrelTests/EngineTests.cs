@@ -769,37 +769,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
             Assert.True(onStartingCalled);
             Assert.Equal(1, testLogger.ApplicationErrorsLogged);
         }
-
-        [Theory(Skip = "TODO: re-write for new behavior")]
-        [MemberData(nameof(ConnectionFilterData))]
-        public async Task ConnectionClosesWhenFinReceived(TestServiceContext testContext)
-        {
-            using (var server = new TestServer(TestApp.EchoAppChunked, testContext))
-            {
-                using (var connection = server.CreateConnection())
-                {
-                    await connection.Send(
-                        "GET / HTTP/1.1",
-                        "",
-                        "POST / HTTP/1.1",
-                        "Content-Length: 7",
-                        "",
-                        "Goodbye");
-                    await connection.ReceiveEnd(
-                        "HTTP/1.1 200 OK",
-                        $"Date: {testContext.DateHeaderValue}",
-                        "Content-Length: 0",
-                        "",
-                        "HTTP/1.1 200 OK",
-                        $"Date: {testContext.DateHeaderValue}",
-                        "Content-Length: 7",
-                        "",
-                        "Goodbye");
-                }
-            }
-        }
-
-        [Theory(Skip = "TODO: Revisit")]
+        
         [MemberData(nameof(ConnectionFilterData))]
         public async Task ConnectionClosesWhenFinReceivedBeforeRequestCompletes(TestServiceContext testContext)
         {
@@ -811,6 +781,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                         "GET / HTTP/1.1",
                         "",
                         "POST / HTTP/1.1");
+                    connection.Shutdown(SocketShutdown.Send);
                     await connection.ReceiveForcedEnd(
                         "HTTP/1.1 200 OK",
                         $"Date: {testContext.DateHeaderValue}",
@@ -831,6 +802,7 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
                         "",
                         "POST / HTTP/1.1",
                         "Content-Length: 7");
+                    connection.Shutdown(SocketShutdown.Send);
                     await connection.ReceiveForcedEnd(
                         "HTTP/1.1 200 OK",
                         $"Date: {testContext.DateHeaderValue}",
@@ -1033,7 +1005,6 @@ namespace Microsoft.AspNetCore.Server.KestrelTests
             Assert.Equal(2, abortedRequestId);
         }
 
-        [Theory(Skip = "TODO: revisit")]
         [MemberData(nameof(ConnectionFilterData))]
         public async Task FailedWritesResultInAbortedRequest(TestServiceContext testContext)
         {

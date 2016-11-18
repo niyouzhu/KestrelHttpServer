@@ -566,7 +566,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         $"HTTP/1.1 500 Internal Server Error",
                         "Connection: close",
                         $"Date: {server.Context.DateHeaderValue}",
@@ -633,7 +633,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         $"HTTP/1.1 500 Internal Server Error",
                         "Connection: close",
                         $"Date: {server.Context.DateHeaderValue}",
@@ -673,7 +673,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         $"HTTP/1.1 200 OK",
                         $"Date: {server.Context.DateHeaderValue}",
                         "Content-Length: 0",
@@ -708,7 +708,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         $"HTTP/1.1 200 OK",
                         $"Date: {server.Context.DateHeaderValue}",
                         "Content-Length: 13",
@@ -744,7 +744,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         $"HTTP/1.1 200 OK",
                         $"Date: {server.Context.DateHeaderValue}",
                         "Content-Length: 11",
@@ -772,7 +772,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "HEAD / HTTP/1.1",
                         "",
                         "");
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         "HTTP/1.1 200 OK",
                         $"Date: {server.Context.DateHeaderValue}",
                         "Content-Length: 42",
@@ -906,7 +906,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "",
                         "wrong");
                     await responseWritten.WaitAsync();
-                    await connection.Receive(
+                    await connection.ReceiveEnd(
                         "HTTP/1.1 400 Bad Request",
                         $"Date: {server.Context.DateHeaderValue}",
                         $"Content-Length: {expectedResponse.Length}",
@@ -935,7 +935,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         "HTTP/1.1 200 OK",
                         "Connection: close",
                         $"Date: {server.Context.DateHeaderValue}",
@@ -951,7 +951,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "Connection: keep-alive",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         "HTTP/1.1 200 OK",
                         "Connection: close",
                         $"Date: {server.Context.DateHeaderValue}",
@@ -982,7 +982,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "GET / HTTP/1.1",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         "HTTP/1.1 200 OK",
                         "Connection: keep-alive",
                         $"Date: {server.Context.DateHeaderValue}",
@@ -998,7 +998,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                         "Connection: keep-alive",
                         "",
                         "");
-                    await connection.ReceiveEnd(
+                    await connection.ReceiveForcedEnd(
                         "HTTP/1.1 200 OK",
                         "Connection: keep-alive",
                         $"Date: {server.Context.DateHeaderValue}",
