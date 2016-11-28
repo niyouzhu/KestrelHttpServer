@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Internal.Networking;
 using Microsoft.AspNetCore.Testing;
 using Microsoft.AspNetCore.Testing.xunit;
-using Microsoft.Extensions.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Newtonsoft.Json;
@@ -435,12 +434,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.FunctionalTests
                     appStarted.Release();
 
                     var token = context.RequestAborted;
-                    token.Register(() => requestAborted.Release());
-
-                    while (!token.IsCancellationRequested)
-                    {
-                        await context.Response.WriteAsync("a");
-                    }
+                    token.Register(() => requestAborted.Release(2));
+                    await requestAborted.WaitAsync().TimeoutAfter(TimeSpan.FromSeconds(10));
                 }));
 
             using (var host = builder.Build())
