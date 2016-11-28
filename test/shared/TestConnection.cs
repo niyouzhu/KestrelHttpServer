@@ -93,8 +93,11 @@ namespace Microsoft.AspNetCore.Testing
         public async Task ReceiveEnd(params string[] lines)
         {
             await Receive(lines);
-            _socket.Shutdown(SocketShutdown.Both);
-            await WaitForConnectionClose();
+            _socket.Shutdown(SocketShutdown.Send);
+            var ch = new char[128];
+            var count = await _reader.ReadAsync(ch, 0, 128).TimeoutAfter(TimeSpan.FromMinutes(1));
+            var text = new string(ch, 0, count);
+            Assert.Equal("", text);
         }
 
         public async Task ReceiveForcedEnd(params string[] lines)
@@ -125,7 +128,7 @@ namespace Microsoft.AspNetCore.Testing
         {
             var tcs = new TaskCompletionSource<object>();
             var eventArgs = new SocketAsyncEventArgs();
-            eventArgs.SetBuffer(new byte[1], 0, 1);
+            eventArgs.SetBuffer(new byte[128], 0, 128);
             eventArgs.Completed += ReceiveAsyncCompleted;
             eventArgs.UserToken = tcs;
 
@@ -139,9 +142,16 @@ namespace Microsoft.AspNetCore.Testing
 
         private void ReceiveAsyncCompleted(object sender, SocketAsyncEventArgs e)
         {
-            Assert.Equal(0, e.BytesTransferred);
             var tcs = (TaskCompletionSource<object>)e.UserToken;
-            tcs.SetResult(null);
+            if (e.BytesTransferred == 0)
+            {
+                tcs.SetResult(null);
+            }
+            else
+            {
+                tcs.SetException(new IOException(
+                    $"Expected connection close, received data instead: \"{_reader.CurrentEncoding.GetString(e.Buffer, 0, e.BytesTransferred)}\""));
+            }
         }
 
         public static Socket CreateConnectedLoopbackSocket(int port)
