@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Internal.Infrastructure;
 using Microsoft.Extensions.Internal;
-using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
 {
