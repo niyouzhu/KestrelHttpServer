@@ -564,6 +564,13 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
                 }
                 else
                 {
+                    // Prevent firing abort cancellation token is this is the last write, to avoid
+                    // aborting the request if the app is still running when the client receives
+                    // the final bytes of the response and closes the connection.
+                    if (IsLastWrite())
+                    {
+                        _abortedCts = null;
+                    }
                     Output.Write(data);
                 }
             }
@@ -599,6 +606,13 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
                 }
                 else
                 {
+                    // Prevent firing abort cancellation token is this is the last write, to avoid
+                    // aborting the request if the app is still running when the client receives
+                    // the final bytes of the response and closes the connection.
+                    if (IsLastWrite())
+                    {
+                        _abortedCts = null;
+                    }
                     return Output.WriteAsync(data, cancellationToken: cancellationToken);
                 }
             }
@@ -631,6 +645,13 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
                 }
                 else
                 {
+                    // Prevent firing abort cancellation token is this is the last write, to avoid
+                    // aborting the request if the app is still running when the client receives
+                    // the final bytes of the response and closes the connection.
+                    if (IsLastWrite())
+                    {
+                        _abortedCts = null;
+                    }
                     await Output.WriteAsync(data, cancellationToken: cancellationToken);
                 }
             }
@@ -656,6 +677,17 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
             }
 
             _responseBytesWritten += count;
+        }
+
+        private bool IsLastWrite()
+        {
+            var responseHeaders = FrameResponseHeaders;
+
+            // Called after VerifyAndUpdateWrite(), so _responseBytesWritten has already been updated.
+            return responseHeaders != null &&
+                !responseHeaders.HasTransferEncoding &&
+                responseHeaders.HasContentLength &&
+                _responseBytesWritten == responseHeaders.HeaderContentLengthValue.Value;
         }
 
         protected void VerifyResponseContentLength()
@@ -838,6 +870,11 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Internal.Http
 
         private async Task WriteAutoChunkSuffixAwaited()
         {
+            // Prevent firing abort cancellation token is this is the last write, to avoid
+            // aborting the request if the app is still running when the client receives
+            // the final bytes of the response and closes the connection.
+            _abortedCts = null;
+
             await WriteChunkedResponseSuffix();
 
             if (_keepAlive)
