@@ -33,18 +33,26 @@ namespace SampleApp
 
         public static void Main(string[] args)
         {
-            var host = new WebHostBuilder()
-                .UseKestrel(options =>
-                {
-                    // options.ThreadCount = 4;
-                    options.NoDelay = true;
-                    options.UseHttps("testCert.pfx", "testPassword");
-                    options.UseConnectionLogging();
-                })
-                .UseUrls("http://localhost:5000", "https://localhost:5001")
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseStartup<Startup>()
-                .Build();
+            var hostBuilder = new WebHostBuilder().UseKestrel(options =>
+            {
+                // options.ThreadCount = 4;
+                options.NoDelay = true;
+                options.UseHttps("testCert.pfx", "testPassword");
+                options.UseConnectionLogging();
+            })
+            .UseContentRoot(Directory.GetCurrentDirectory())
+            .UseStartup<Startup>();
+
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LISTEN_PID")))
+            {
+                hostBuilder.UseUrls($"http://sockfd:{Environment.GetEnvironmentVariable("LISTEN_PID")}");
+            }
+            else
+            {
+                hostBuilder.UseUrls("http://localhost:5000", "https://localhost:5001");
+            }
+
+            var host = hostBuilder.Build();
 
             // The following section should be used to demo sockets
             //var addresses = application.GetAddresses();
